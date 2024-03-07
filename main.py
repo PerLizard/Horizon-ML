@@ -90,6 +90,6 @@ if __name__ == '__main__':
 
     print("Training complete!")
 
-    torch.save(model.state_dict(), 'rubbish_can/plastic_classification_model.pth')
+    torch.save(model.state_dict(), 'rubbish_can_plastic_classification_model.pth')
 
 
