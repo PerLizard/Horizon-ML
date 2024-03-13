@@ -6,7 +6,7 @@ from torchvision import datasets, transforms, models
 import os
 
 if __name__ == '__main__':
-    splitfolders.ratio("dataset", output="splitData", seed=1337, ratio=(.7, .3), group_prefix=None, move=False)
+    splitfolders.ratio("dataset", output="splitData", seed=1337, ratio=(.8, .1, .1), group_prefix=None, move=False)
 
     data_transforms = {
         'train': transforms.Compose([
@@ -21,17 +21,23 @@ if __name__ == '__main__':
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]),
+        'test': transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ]),
     }
 
     # Define the data directory
     data_dir = 'splitData'
 
     # Create data loaders
-    image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) for x in ['train', 'val']}
+    image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) for x in ['train', 'val', 'test']}
 
     dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=4, shuffle=True, num_workers=4) for x in
-                   ['train', 'val']}
-    dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
+                   ['train', 'val', 'test']}
+    dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val', 'test']}
     print(dataset_sizes)
 
     class_names = image_datasets['train'].classes
@@ -87,6 +93,18 @@ if __name__ == '__main__':
             epoch_acc = running_corrects.double() / dataset_sizes[phase]
 
             print(f'{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}')
+
+        running_corrects = 0
+
+        for inputs, labels in dataloaders['test']:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+            outputs = model(inputs)
+            _, preds = torch.max(outputs, 1)
+            running_corrects += torch.sum(preds == labels.data)
+
+        acc = running_corrects.double() / dataset_sizes['test']
+        print(f"End of {epoch}, accuracy {acc}")
 
     print("Training complete!")
 
